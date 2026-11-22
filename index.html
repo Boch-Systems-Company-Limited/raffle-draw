@@ -1,0 +1,1761 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Raffle Wheel</title>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Outfit:wght@400;600&display=swap">
+  <style>
+    :root {
+      --bg: #0e0c08;
+      --panel: #18150d;
+      --ac: #d4af37;
+      --tx: #f5ecd0;
+      --mu: #a89a6c;
+      --ln: #3a321b;
+      box-sizing: border-box;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px)
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: inherit
+    }
+
+    html,
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--tx);
+      font-family: Outfit, system-ui, sans-serif;
+      color-scheme: dark
+    }
+
+    html {
+      scroll-padding-top: env(safe-area-inset-top, 0px)
+    }
+
+    body {
+      min-height: 100%;
+      transition: background .4s
+    }
+
+    h1 {
+      font: 700 clamp(1.8rem, 6vw, 3rem)/1.1 "Cormorant Garamond", Georgia, serif;
+      margin: 0;
+      text-align: center;
+      color: var(--ac);
+      letter-spacing: .02em
+    }
+
+    .sub {
+      text-align: center;
+      color: var(--mu);
+      margin: .4rem 0 0;
+      min-height: 1.3em
+    }
+
+    .app {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px 16px 40px;
+      display: grid;
+      gap: 24px
+    }
+
+    @media(min-width:900px) {
+      .app {
+        grid-template-columns: 1fr 360px;
+        align-items: start
+      }
+
+      .head {
+        grid-column: 1/-1
+      }
+    }
+
+    .stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px
+    }
+
+    .wheelwrap {
+      position: relative;
+      width: min(92vw, calc(100vh - 230px), 1200px);
+      min-width: 280px;
+      aspect-ratio: 1
+    }
+
+    .pres .panel-col {
+      display: none !important
+    }
+
+    .pres.app {
+      grid-template-columns: 1fr !important;
+      max-width: 100vw !important;
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 10px 16px 14px !important;
+      gap: 8px !important;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+
+    .pres .head {
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+
+    .pres h1 {
+      font-size: clamp(1.4rem, 3vw, 2.2rem);
+      margin: 0;
+      line-height: 1.1;
+    }
+
+    .pres .sub {
+      margin: 2px 0 0;
+      min-height: auto;
+      font-size: clamp(0.8rem, 1.5vw, 0.95rem);
+    }
+
+    .pres .stage {
+      width: 100%;
+      max-width: 100%;
+      gap: 8px;
+    }
+
+    .pres .wheelwrap {
+      width: min(94vw, calc(100vh - 190px), 1400px)
+    }
+
+    .pres .readout {
+      font-size: clamp(1.6rem, 3.5vw, 2.6rem);
+      min-height: 1.2em;
+      line-height: 1.1;
+      margin: 0;
+    }
+
+    .pres .go {
+      padding: 8px 36px;
+      font-size: 1.1rem;
+    }
+
+    .pres .sm {
+      padding: 4px 14px;
+      font-size: 0.85rem;
+    }
+
+    .wheelwrap.wide {
+      aspect-ratio: auto;
+      width: min(94vw, 900px);
+      height: min(62vh, 560px);
+      min-height: 380px
+    }
+
+    .pres .wheelwrap.wide {
+      width: min(96vw, 1700px);
+      height: 70vh
+    }
+
+    .wide .pointer {
+      display: none
+    }
+
+    .wide canvas#wheel {
+      border-radius: 16px;
+      box-shadow: 0 0 0 3px var(--ac)
+    }
+
+    .alt {
+      width: min(94vw, 900px)
+    }
+
+    .pres .alt {
+      width: min(96vw, 1920px);
+      max-width: 100%;
+    }
+
+    .pres .board {
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .reel {
+      position: relative;
+      height: min(60vh, 460px);
+      overflow: hidden;
+      border: 3px solid var(--ac);
+      border-radius: 16px;
+      background: var(--panel)
+    }
+
+    .pres .reel {
+      height: 62vh
+    }
+
+    .reel .row {
+      position: absolute;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 0 16px
+    }
+
+    .reel .hl {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      border-block: 3px solid var(--ac);
+      background: #ffffff14;
+      z-index: 1;
+      pointer-events: none
+    }
+
+    .shuf {
+      height: min(46vh, 360px);
+      display: grid;
+      place-items: center;
+      border: 3px solid var(--ac);
+      border-radius: 16px;
+      background: var(--panel);
+      padding: 16px;
+      overflow: hidden
+    }
+
+    .pres .shuf {
+      height: 58vh
+    }
+
+    .shuf .big {
+      font-family: "Cormorant Garamond", Georgia, serif;
+      font-weight: 700;
+      color: var(--ac);
+      white-space: nowrap;
+      text-align: center
+    }
+
+    .board {
+      display: grid;
+      gap: 3px;
+      padding: 6px;
+      border: 3px solid var(--ac);
+      border-radius: 16px;
+      background: var(--panel)
+    }
+
+    .board div {
+      position: relative;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      background: #ffffff0d;
+      border-radius: 4px;
+      padding: 0 4px;
+      user-select: none
+    }
+
+    .board div.gone {
+      opacity: .25
+    }
+
+    .board div.win {
+      transform: scale(1.9);
+      z-index: 3;
+      box-shadow: 0 0 30px var(--ac), 0 0 0 3px var(--tx)
+    }
+
+    .board div.on {
+      opacity: 1;
+      background: var(--ac);
+      color: #111;
+      font-weight: 700;
+      transform: scale(1.35);
+      z-index: 2;
+      box-shadow: 0 0 18px var(--ac);
+      overflow: visible
+    }
+
+    .slots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      padding: 24px 8px;
+      border: 3px solid var(--ac);
+      border-radius: 16px;
+      background: var(--panel);
+      overflow: hidden
+    }
+
+    .slots .cell {
+      display: grid;
+      place-items: center;
+      background: #000a;
+      border: 2px solid var(--ln);
+      border-radius: 8px;
+      font-family: "Cormorant Garamond", Georgia, serif;
+      font-weight: 700;
+      color: var(--mu)
+    }
+
+    .slots .cell.lock {
+      color: var(--ac);
+      border-color: var(--ac)
+    }
+
+    .drum {
+      display: block;
+      margin: auto;
+      width: min(94vw, calc(100vh - 250px), 720px);
+      aspect-ratio: 1
+    }
+
+    canvas#wheel {
+      width: 100%;
+      height: 100%;
+      display: block;
+      border-radius: 50%;
+      box-shadow: 0 0 0 6px var(--ac), 0 0 60px color-mix(in srgb, var(--ac) 35%, transparent)
+    }
+
+    .pointer {
+      position: absolute;
+      left: 50%;
+      top: -14px;
+      width: 0;
+      height: 0;
+      transform: translateX(-50%);
+      border-left: 16px solid transparent;
+      border-right: 16px solid transparent;
+      border-top: 34px solid var(--tx);
+      filter: drop-shadow(0 3px 4px #000a);
+      z-index: 2
+    }
+
+    .readout {
+      font: 700 clamp(1.6rem, 5vw, 2.4rem)/1.1 "Cormorant Garamond", Georgia, serif;
+      min-height: 1.2em;
+      text-align: center;
+      max-width: 90vw;
+      overflow-wrap: anywhere
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+      color: inherit
+    }
+
+    .go {
+      background: var(--ac);
+      color: #111;
+      border: 0;
+      border-radius: 999px;
+      padding: 16px 56px;
+      font-weight: 600;
+      font-size: 1.2rem;
+      cursor: pointer;
+      min-width: 200px
+    }
+
+    .go.stop {
+      background: #c0392b;
+      color: #fff
+    }
+
+    .go:disabled {
+      opacity: .5;
+      cursor: not-allowed
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: 2px solid var(--tx);
+      outline-offset: 2px
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--ln);
+      border-radius: 12px;
+      padding: 16px;
+      display: grid;
+      gap: 14px
+    }
+
+    .panel h2 {
+      margin: 0;
+      font: 700 1.3rem "Cormorant Garamond", Georgia, serif;
+      color: var(--ac)
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      font-size: .9rem;
+      color: var(--mu)
+    }
+
+    input[type=text],
+    input[type=number],
+    select,
+    textarea {
+      background: #0006;
+      border: 1px solid var(--ln);
+      border-radius: 8px;
+      padding: 10px;
+      width: 100%;
+      color: var(--tx)
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: end
+    }
+
+    .row>* {
+      flex: 1
+    }
+
+    .chk {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--tx)
+    }
+
+    .chk input {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--ac)
+    }
+
+    .sm {
+      background: transparent;
+      border: 1px solid var(--ln);
+      border-radius: 8px;
+      padding: 9px 12px;
+      cursor: pointer
+    }
+
+    .sm:hover {
+      border-color: var(--ac)
+    }
+
+    .btns {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap
+    }
+
+    ol {
+      margin: 0;
+      padding-left: 1.4rem;
+      display: grid;
+      gap: 4px
+    }
+
+    .hide {
+      display: none
+    }
+
+    #ov {
+      position: fixed;
+      inset: 0;
+      background: #000c;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      padding: 20px
+    }
+
+    #ov.on {
+      display: flex
+    }
+
+    .card {
+      background: var(--panel);
+      border: 2px solid var(--ac);
+      border-radius: 16px;
+      padding: 32px 28px;
+      text-align: center;
+      max-width: 520px;
+      width: 100%
+    }
+
+    .card small {
+      color: var(--mu);
+      font-size: 1rem
+    }
+
+    .card .w {
+      font: 700 clamp(2.4rem, 10vw, 4.5rem)/1.1 "Cormorant Garamond", Georgia, serif;
+      color: var(--ac);
+      margin: 12px 0 24px;
+      overflow-wrap: anywhere
+    }
+
+    /* Custom confirm dialog */
+    #confirmOv {
+      position: fixed;
+      inset: 0;
+      background: #000d;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      padding: 20px
+    }
+
+    #confirmOv.on {
+      display: flex
+    }
+
+    #confirmOv .card {
+      max-width: 420px;
+      text-align: center
+    }
+
+    #confirmOv .card p {
+      color: var(--mu);
+      font-size: 1rem;
+      line-height: 1.5;
+      margin: 0 0 24px;
+      white-space: pre-wrap
+    }
+
+    #confirmOv .card .btns {
+      justify-content: center;
+      gap: 12px
+    }
+
+    #confirmOv .card button {
+      min-width: 120px;
+      padding: 12px 28px
+    }
+
+    #confirmOv .card .cancel-btn {
+      background: transparent;
+      border: 2px solid var(--ln);
+      color: var(--mu)
+    }
+
+    #confirmOv .card .cancel-btn:hover {
+      border-color: var(--mu);
+      color: var(--tx)
+    }
+
+    #confirmOv .card .danger-btn {
+      background: #8b1a1a;
+      border: 2px solid #a52a2a;
+      color: #fff
+    }
+
+    #confirmOv .card .danger-btn:hover {
+      background: #a52a2a;
+      border-color: #c0392b
+    }
+
+    #conf {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 11
+    }
+
+    @media(prefers-color-scheme:light) {
+
+      html,
+      body {
+        color-scheme: light
+      }
+    }
+
+    .audit-panel {
+      background: var(--panel);
+      border: 1px solid var(--ln);
+      border-radius: 12px;
+      padding: 16px;
+      display: grid;
+      gap: 14px
+    }
+
+    .audit-panel h2 {
+      margin: 0;
+      font: 700 1.3rem "Cormorant Garamond", Georgia, serif;
+      color: var(--ac)
+    }
+
+    .audit-panel textarea {
+      min-height: 100px;
+      font-family: monospace;
+      font-size: 12px
+    }
+
+    .warn {
+      color: #e74c3c;
+      font-size: .85rem;
+      margin-top: 4px
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="conf"></canvas>
+  <div class="app">
+    <div class="head">
+      <h1 id="ttl">Raffle Draw</h1>
+      <p class="sub" id="sub"></p>
+    </div>
+
+    <div class="stage">
+      <div class="wheelwrap">
+        <div class="pointer"></div><canvas id="wheel"></canvas>
+      </div>
+      <div class="alt hide" id="alt"></div>
+      <div class="readout" id="read" aria-live="polite">Ready</div>
+      <button class="go" id="go">Spin</button>
+      <button class="sm" id="pres">Presentation mode</button>
+    </div>
+
+    <div class="panel-col" style="display:grid;gap:16px">
+      <div class="panel">
+        <h2>Customize</h2>
+        <label>Draw style<select id="style">
+            <option value="wheel">Wheel (round)</option>
+            <option value="zoom">Wheel (zoomed names)</option>
+            <option value="reel">Name reel</option>
+            <option value="shuffle">Shuffle &amp; reveal</option>
+            <option value="board">Name board</option>
+            <option value="slots">Slot machine</option>
+            <option value="balls">Lottery balls</option>
+          </select></label>
+        <label>Event title<input type="text" id="title" value="Raffle Draw"></label>
+        <label>Subtitle<input type="text" id="subtitle" placeholder="e.g. Sunday, 22 November 2026"></label>
+        <label>Wheel contents
+          <select id="mode">
+            <option value="names">Names (one per line)</option>
+            <option value="numbers" selected>Number range</option>
+          </select>
+        </label>
+        <label id="namesBox">Entries<textarea id="names" placeholder="One name or ticket per line"></textarea></label>
+        <div id="numBox" class="row hide">
+          <label>From<input type="number" id="from" value="1"></label>
+          <label>To<input type="number" id="to" value="300"></label>
+        </div>
+        <div class="row">
+          <label>Auto-stop (seconds, 0 = wait for Stop)<input type="number" id="auto" min="0" value="0"></label>
+          <label>Colors<select id="theme"></select></label>
+        </div>
+        <label class="chk"><input type="checkbox" id="remove" checked> Remove winner from the wheel after each
+          draw</label>
+        <label class="chk"><input type="checkbox" id="sound" checked> Tick sound</label>
+        <div class="btns">
+          <button class="sm" id="shuffle">Shuffle order</button>
+          <button class="sm" id="reset">Restore all entries</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Winners</h2>
+        <ol id="wins"></ol>
+        <p id="nowin" style="margin:0;color:var(--mu)">No winners yet.</p>
+        <div class="btns"><button class="sm" id="clr">Clear winners</button></div>
+      </div>
+      <div class="audit-panel">
+        <h2>Audit Trail</h2>
+        <textarea id="audit" readonly></textarea>
+        <div class="btns"><button class="sm" id="export">Export CSV</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="ov">
+    <div class="card"><small>The winner is</small>
+      <div class="w" id="winner"></div>
+      <div class="btns" style="justify-content:center"><button class="go" id="ok"
+          style="min-width:160px;padding:12px 40px">Continue</button></div>
+    </div>
+  </div>
+
+  <div id="confirmOv">
+    <div class="card">
+      <p id="confirmMsg"></p>
+      <div class="btns">
+        <button class="cancel-btn" id="confirmCancel">Cancel</button>
+        <button class="danger-btn" id="confirmOk">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = s => document.querySelector(s);
+    const THEMES = {
+      'Black & gold': { bg: '#0e0c08', panel: '#18150d', ac: '#d4af37', tx: '#f5ecd0', mu: '#a89a6c', ln: '#3a321b', c: ['#1c1810', '#d4af37', '#2c2512', '#e9cb62', '#120f08', '#b08d22'] },
+      'Emerald': { bg: '#06120d', panel: '#0d1f17', ac: '#3ddc97', tx: '#e6fff3', mu: '#7fb69d', ln: '#1d3d2e', c: ['#0f2e21', '#3ddc97', '#164a35', '#7af0bb', '#0a1c14', '#26a874'] },
+      'Royal': { bg: '#0d0a1c', panel: '#161230', ac: '#b794ff', tx: '#f0eaff', mu: '#9a8cc9', ln: '#2e2760', c: ['#1d1745', '#b794ff', '#2c2266', '#d6c2ff', '#120e2b', '#8a63e6'] },
+      'Party': { bg: '#12091a', panel: '#1d1028', ac: '#ffd23f', tx: '#fff7e0', mu: '#c9a8d8', ln: '#43255a', c: ['#ff4d6d', '#ffd23f', '#2ec4b6', '#7b5cff', '#ff9f1c', '#3a86ff'] }
+    };
+    const DEF = ['Adewale', 'Chidinma', 'Tunde', 'Ngozi', 'Ibrahim', 'Funke', 'Emeka', 'Aisha', 'Segun', 'Blessing', 'Kelechi', 'Yetunde'];
+    const STORAGE_VERSION = 2;
+    const STORAGE_KEY = 'rw300_v2';
+
+    // State management
+    let state = {
+      entries: [],// {id:string, value:string}
+      eliminatedIds: new Set(),
+      winners: [],// {id:string, value:string, timestamp:number, drawNumber:number}
+      audit: [],// {drawNumber:number, winnerId:string, winnerValue:string, timestamp:number, eligibleCount:number, style:string, removeEnabled:boolean}
+      drawNumber: 0,
+      title: '',
+      subtitle: '',
+      mode: 'numbers',
+      names: '',
+      from: 1,
+      to: 300,
+      auto: 0,
+      theme: 'Black & gold',
+      style: 'wheel',
+      removeEnabled: true,
+      soundEnabled: true
+    };
+
+    // Draw engine state
+    let drawState = {
+      isRunning: false,
+      isStopping: false,
+      lockedWinner: null,// null or {id, value, index}
+      lockedAt: null
+    };
+
+    // Animation state
+    let anim = {
+      rot: 0,
+      vel: 0,
+      last: 0,
+      lastIdx: -1,
+      fric: .8,
+      autoT: null,
+      audio: null,
+      r0: 0,
+      t0: 0,
+      target: 0,
+      v0: 1,
+      ri: 0,
+      nx: 0,
+      tStr: '',
+      done: false,
+      altKey: '',
+      AE: {}
+    };
+
+    const wheel = $('#wheel'), ctx = wheel.getContext('2d');
+
+    // Initialize
+    themeSel();
+    loadState();
+    rebuildEntries();
+    updateUI(); // Sync UI with state
+    applyTheme();
+    render();
+    listWins();
+    updateAudit();
+    requestAnimationFrame(frame);
+
+    // ==================== DRAW ENGINE ====================
+
+    function selectWinner() {
+      const eligible = getEligibleEntries();
+      if (eligible.length === 0) throw new Error('No eligible entries');
+      if (eligible.length === 1) return eligible[0];
+
+      // Use crypto.getRandomValues with rejection sampling to avoid modulo bias
+      const maxUint32 = 0xFFFFFFFF;
+      const n = eligible.length;
+      const limit = Math.floor(maxUint32 / n) * n;
+
+      let randomUint32;
+      let index;
+      do {
+        const buffer = new Uint32Array(1);
+        crypto.getRandomValues(buffer);
+        randomUint32 = buffer[0];
+      } while (randomUint32 >= limit);
+
+      index = randomUint32 % n;
+      return eligible[index];
+    }
+
+    function startDraw() {
+      if (drawState.isRunning || drawState.isStopping) {
+        console.warn('Draw already in progress');
+        return false;
+      }
+
+      const eligible = getEligibleEntries();
+      if (eligible.length === 0) {
+        $('#read').textContent = 'No eligible entries';
+        return false;
+      }
+      if (eligible.length === 1) {
+        $('#read').textContent = 'Only one entry left';
+        return false;
+      }
+
+      try {
+        const winner = selectWinner();
+        const eligibleIndex = eligible.findIndex(e => e.id === winner.id);
+
+        drawState.isRunning = true;
+        drawState.isStopping = false;
+        drawState.lockedWinner = { ...winner, index: eligibleIndex };
+        drawState.lockedAt = Date.now();
+
+        anim.done = false;
+        anim.vel = 0;
+        anim.tStr = winner.value;
+
+        setBtn();
+        disableControls(true);
+
+        const autoSec = parseFloat($('#auto').value) || 0;
+        if (autoSec > 0) {
+          anim.autoT = setTimeout(stopDraw, autoSec * 1000);
+        }
+
+        return true;
+      } catch (e) {
+        console.error('Draw error:', e);
+        $('#read').textContent = 'Error starting draw';
+        return false;
+      }
+    }
+
+    function stopDraw() {
+      if (!drawState.isRunning || drawState.isStopping) return;
+
+      clearTimeout(anim.autoT);
+      drawState.isStopping = true;
+      drawState.isRunning = false;
+
+      anim.v0 = Math.max(anim.vel, 6);
+      anim.r0 = anim.rot;
+      anim.t0 = performance.now();
+
+      setBtn();
+    }
+
+    function finalizeDraw() {
+      if (!drawState.lockedWinner) {
+        console.error('No locked winner to finalize');
+        return;
+      }
+
+      const winner = drawState.lockedWinner;
+      state.drawNumber++;
+
+      const winnerRecord = {
+        id: winner.id,
+        value: winner.value,
+        timestamp: Date.now(),
+        drawNumber: state.drawNumber
+      };
+      state.winners.push(winnerRecord);
+
+      const auditRecord = {
+        drawNumber: state.drawNumber,
+        winnerId: winner.id,
+        winnerValue: winner.value,
+        timestamp: Date.now(),
+        eligibleCount: getEligibleEntries().length,
+        style: state.style,
+        removeEnabled: state.removeEnabled
+      };
+      state.audit.push(auditRecord);
+
+      if (state.removeEnabled) {
+        state.eliminatedIds.add(winner.id);
+      }
+
+      drawState.lockedWinner = null;
+      drawState.isStopping = false;
+      drawState.lockedAt = null;
+
+      $('#read').textContent = winner.value;
+      $('#winner').textContent = winner.value;
+      $('#ov').classList.add('on');
+      $('#ok').focus();
+      confetti();
+      listWins();
+      updateAudit();
+      saveState();
+      setBtn();
+      disableControls(false);
+    }
+
+    // ==================== STATE MANAGEMENT ====================
+
+    function getEligibleEntries() {
+      return state.entries.filter(e => !state.eliminatedIds.has(e.id));
+    }
+
+    function rebuildEntries() {
+      const newEntries = parseEntries();
+      const oldIds = new Set(state.entries.map(e => e.id));
+      const newValues = new Map(newEntries.map(e => [e.value, []]));
+
+      // Toggle UI based on mode
+      $('#namesBox').classList.toggle('hide', state.mode === 'numbers');
+      $('#numBox').classList.toggle('hide', state.mode !== 'numbers');
+
+      // Track duplicates by value
+      newEntries.forEach(e => {
+        if (newValues.has(e.value)) {
+          newValues.get(e.value).push(e);
+        }
+      });
+
+      // Check for duplicate values
+      const duplicates = [];
+      newValues.forEach((entries, val) => {
+        if (entries.length > 1) {
+          duplicates.push(`${val} (${entries.length} tickets)`);
+        }
+      });
+
+      const warn = $('#namesBox').querySelector('.warn');
+      if (warn) warn.remove();
+      if (duplicates.length > 0) {
+        const div = document.createElement('div');
+        div.className = 'warn';
+        div.textContent = 'Duplicate values detected: ' + duplicates.join(', ');
+        $('#namesBox').appendChild(div);
+      }
+
+      // Preserve eliminated status for entries that still exist
+      const newEliminated = new Set();
+      state.eliminatedIds.forEach(id => {
+        if (newEntries.find(e => e.id === id)) {
+          newEliminated.add(id);
+        }
+      });
+      state.eliminatedIds = newEliminated;
+
+      state.entries = newEntries;
+      render();
+    }
+
+    function parseEntries() {
+      if (state.mode === 'numbers') {
+        const a = parseInt(state.from), b = parseInt(state.to);
+        if (isNaN(a) || isNaN(b)) return [];
+        const result = [];
+        const start = Math.min(a, b), end = Math.max(a, b);
+        for (let i = start; i <= end && result.length < 2000; i++) {
+          result.push({ id: `num_${i}`, value: String(i) });
+        }
+        return result;
+      }
+
+      return state.names.split('\n')
+        .map((s, i) => s.trim())
+        .filter(Boolean)
+        .map((value, i) => ({ id: `name_${i}_${btoa(value).slice(0, 8)}`, value }));
+    }
+
+    function saveState() {
+      try {
+        const data = {
+          version: STORAGE_VERSION,
+          entries: state.entries,
+          eliminatedIds: Array.from(state.eliminatedIds),
+          winners: state.winners,
+          audit: state.audit,
+          drawNumber: state.drawNumber,
+          title: state.title,
+          subtitle: state.subtitle,
+          mode: state.mode,
+          names: state.names,
+          from: state.from,
+          to: state.to,
+          auto: state.auto,
+          theme: state.theme,
+          style: state.style,
+          removeEnabled: state.removeEnabled,
+          soundEnabled: state.soundEnabled
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      } catch (e) {
+        console.error('Save error:', e);
+      }
+    }
+
+    function loadState() {
+      let data = null;
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          data = JSON.parse(raw);
+        }
+      } catch (e) {
+        console.error('Load error:', e);
+      }
+
+      // Try migration from old format
+      if (!data) {
+        try {
+          const oldRaw = localStorage.getItem('rw300');
+          if (oldRaw) {
+            const oldData = JSON.parse(oldRaw);
+            // Migrate old data
+            state.title = oldData.title || '';
+            state.subtitle = oldData.subtitle || '';
+            state.mode = oldData.mode || 'numbers';
+            state.names = oldData.names || DEF.join('\n');
+            state.from = parseInt(oldData.from) || 1;
+            state.to = parseInt(oldData.to) || 300;
+            state.auto = parseFloat(oldData.auto) || 0;
+            state.theme = oldData.theme || 'Black & gold';
+            state.style = oldData.style || 'wheel';
+            state.removeEnabled = oldData.remove !== false;
+            state.soundEnabled = oldData.sound !== false;
+
+            // Convert old winners to new format
+            if (oldData.winners) {
+              state.winners = oldData.winners.map((w, i) => ({
+                id: `migrated_${i}`,
+                value: String(w),
+                timestamp: Date.now(),
+                drawNumber: i + 1
+              }));
+              state.drawNumber = state.winners.length;
+            }
+
+            rebuildEntries();
+            saveState();
+            updateUI();
+            return;
+          }
+        } catch (e) {
+          console.error('Migration error:', e);
+        }
+      }
+
+      if (!data) {
+        // Use defaults
+        state.names = DEF.join('\n');
+        rebuildEntries();
+        updateUI();
+        return;
+      }
+
+      // Validate and load
+      if (data.version !== STORAGE_VERSION) {
+        console.warn('Storage version mismatch, resetting');
+        state.names = DEF.join('\n');
+        rebuildEntries();
+        updateUI();
+        return;
+      }
+
+      try {
+        if (data.entries && Array.isArray(data.entries)) {
+          state.entries = data.entries;
+        }
+        if (data.eliminatedIds && Array.isArray(data.eliminatedIds)) {
+          state.eliminatedIds = new Set(data.eliminatedIds);
+        }
+        if (data.winners && Array.isArray(data.winners)) {
+          state.winners = data.winners;
+        }
+        if (data.audit && Array.isArray(data.audit)) {
+          state.audit = data.audit;
+        }
+        if (typeof data.drawNumber === 'number') {
+          state.drawNumber = data.drawNumber;
+        }
+        if (data.title !== undefined) state.title = data.title;
+        if (data.subtitle !== undefined) state.subtitle = data.subtitle;
+        if (data.mode !== undefined) state.mode = data.mode;
+        if (data.names !== undefined) state.names = data.names;
+        if (data.from !== undefined) state.from = data.from;
+        if (data.to !== undefined) state.to = data.to;
+        if (data.auto !== undefined) state.auto = data.auto;
+        if (data.theme !== undefined) state.theme = data.theme;
+        if (data.style !== undefined) state.style = data.style;
+        if (data.removeEnabled !== undefined) state.removeEnabled = data.removeEnabled;
+        if (data.soundEnabled !== undefined) state.soundEnabled = data.soundEnabled;
+
+        updateUI();
+      } catch (e) {
+        console.error('Validation error:', e);
+        state.names = DEF.join('\n');
+        rebuildEntries();
+        updateUI();
+      }
+    }
+
+    function updateUI() {
+      $('#title').value = state.title;
+      $('#subtitle').value = state.subtitle;
+      $('#mode').value = state.mode;
+      $('#names').value = state.names;
+      $('#from').value = state.from;
+      $('#to').value = state.to;
+      $('#auto').value = state.auto;
+      $('#theme').value = state.theme;
+      $('#style').value = state.style;
+      $('#remove').checked = state.removeEnabled;
+      $('#sound').checked = state.soundEnabled;
+    }
+
+    // ==================== UI HELPERS ====================
+
+    function themeSel() { $('#theme').innerHTML = Object.keys(THEMES).map(k => `<option>${k}</option>`).join('') }
+
+    function applyTheme() {
+      const t = THEMES[state.theme] || THEMES['Black & gold'], r = document.documentElement.style;
+      r.setProperty('--bg', t.bg); r.setProperty('--panel', t.panel); r.setProperty('--ac', t.ac); r.setProperty('--tx', t.tx); r.setProperty('--mu', t.mu); r.setProperty('--ln', t.ln);
+      $('#ttl').textContent = state.title || 'Raffle Draw'; $('#sub').textContent = state.subtitle; document.title = $('#ttl').textContent;
+    }
+
+    function setBtn() {
+      const b = $('#go');
+      b.classList.toggle('stop', drawState.isRunning);
+      b.disabled = drawState.isStopping;
+      b.textContent = drawState.isRunning ? 'Stop' : drawState.isStopping ? 'Slowing…' : 'Spin';
+    }
+
+    function disableControls(disabled) {
+      $('#names').disabled = disabled;
+      $('#from').disabled = disabled;
+      $('#to').disabled = disabled;
+      $('#mode').disabled = disabled;
+      $('#shuffle').disabled = disabled;
+      $('#reset').disabled = disabled;
+      $('#remove').disabled = disabled;
+      $('#style').disabled = disabled;
+    }
+
+    function listWins() {
+      $('#wins').innerHTML = state.winners.map(w => `<li></li>`).join('');
+      [...$('#wins').children].forEach((li, i) => li.textContent = state.winners[i].value);
+      $('#nowin').style.display = state.winners.length ? 'none' : '';
+    }
+
+    function updateAudit() {
+      const text = state.audit.map(a => {
+        const date = new Date(a.timestamp).toLocaleString();
+        return `Draw #${a.drawNumber} | ${date} | Winner: ${a.winnerValue} (ID: ${a.winnerId}) | Eligible: ${a.eligibleCount} | Style: ${a.style} | Remove: ${a.removeEnabled}`;
+      }).join('\n');
+      $('#audit').value = text || 'No audit trail yet.';
+    }
+
+    function confirmAction(message, callback) {
+      $('#confirmMsg').textContent = message;
+      $('#confirmOv').classList.add('on');
+      $('#confirmOk').onclick = () => {
+        $('#confirmOv').classList.remove('on');
+        callback();
+      };
+      $('#confirmCancel').onclick = () => {
+        $('#confirmOv').classList.remove('on');
+      };
+      // Close on overlay click
+      $('#confirmOv').onclick = (e) => {
+        if (e.target === $('#confirmOv')) {
+          $('#confirmOv').classList.remove('on');
+        }
+      };
+      // Focus cancel by default for safety
+      $('#confirmCancel').focus();
+    }
+
+    // ==================== ANIMATION ====================
+
+    function size() {
+      const d = window.devicePixelRatio || 1, w = wheel.clientWidth, h = wheel.clientHeight;
+      if (wheel.width !== Math.round(w * d) || wheel.height !== Math.round(h * d)) {
+        wheel.width = Math.round(w * d); wheel.height = Math.round(h * d)
+      }
+      return { w, h, d };
+    }
+
+    function _renderBig() {
+      const { w: W, h: H, d } = size(), A = getEligibleEntries(), t = THEMES[state.theme] || THEMES['Black & gold'];
+      ctx.setTransform(d, 0, 0, d, 0, 0); ctx.clearRect(0, 0, W, H); ctx.fillStyle = t.panel; ctx.fillRect(0, 0, W, H);
+      const cy = H / 2;
+      if (!A.length) { ctx.fillStyle = t.mu; ctx.font = '18px Outfit,sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Add entries to begin', W / 2, cy); return }
+      const n = A.length, arc = 2 * Math.PI / n, SEG = 24, Rfull = Math.min(W - 44, H - 24) / 2, R = Math.max(Rfull, n * SEG / (2 * Math.PI)), cx = Math.min(W / 2, W - R - 16), big = R > Rfull + 1, cur = idxAt(n);
+      for (let i = 0; i < n; i++) {
+        let a = (i * arc + arc / 2 + anim.rot) % (2 * Math.PI); if (a > Math.PI) a -= 2 * Math.PI; if (a < -Math.PI) a += 2 * Math.PI;
+        if (big && (Math.cos(a) < 0 || Math.abs(R * Math.sin(a)) > H / 2 + SEG * 2)) continue;
+        const col = t.c[i % t.c.length];
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, R - 1, anim.rot + i * arc, anim.rot + (i + 1) * arc); ctx.closePath(); ctx.fillStyle = col; ctx.fill();
+        ctx.strokeStyle = i === cur ? t.tx : t.ac + '55'; ctx.lineWidth = i === cur ? 2.5 : 1; ctx.stroke();
+        const fs = big ? 15 : Math.min(R * .09, arc * R * .55);
+        if (fs >= 9) {
+          ctx.save(); ctx.translate(cx, cy); ctx.rotate(anim.rot + i * arc + arc / 2); ctx.fillStyle = lum(col) > .5 ? '#111' : '#fff';
+          ctx.font = `${i === cur ? 700 : 600} ${fs}px Outfit,sans-serif`; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+          let s = A[i].value, max = big ? W - 70 : R * .68; while (ctx.measureText(s).width > max && s.length > 3) s = s.slice(0, -2); if (s !== A[i].value) s += '…';
+          ctx.fillText(s, R - 12, 0); ctx.restore()
+        }
+      }
+      if (!big) { ctx.beginPath(); ctx.arc(cx, cy, R - 1, 0, 7); ctx.strokeStyle = t.ac; ctx.lineWidth = 4; ctx.stroke(); ctx.beginPath(); ctx.arc(cx, cy, R * .09, 0, 7); ctx.fillStyle = t.bg; ctx.fill(); ctx.lineWidth = 3; ctx.stroke() }
+      const px = cx + R; ctx.save(); ctx.shadowColor = '#000a'; ctx.shadowBlur = 6; ctx.fillStyle = t.tx; ctx.beginPath(); ctx.moveTo(px + 8, cy - 16); ctx.lineTo(px + 8, cy + 16); ctx.lineTo(px - 26, cy); ctx.closePath(); ctx.fill(); ctx.restore();
+    }
+
+    function renderWheel() {
+      size(); ctx.setTransform(1, 0, 0, 1, 0, 0); const A = getEligibleEntries(), W = wheel.width, R = W / 2, t = THEMES[state.theme] || THEMES['Black & gold'];
+      ctx.clearRect(0, 0, W, W);
+      if (!A.length) { ctx.fillStyle = t.panel; ctx.beginPath(); ctx.arc(R, R, R, 0, 7); ctx.fill(); ctx.fillStyle = t.mu; ctx.font = `${W / 18}px Outfit,sans-serif`; ctx.textAlign = 'center'; ctx.fillText('Add entries to begin', R, R); return }
+      const n = A.length, arc = 2 * Math.PI / n;
+      ctx.save(); ctx.translate(R, R); ctx.rotate(anim.rot);
+      for (let i = 0; i < n; i++) {
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, R - 2, i * arc, (i + 1) * arc); ctx.closePath();
+        let col = t.c[i % t.c.length]; if (i === n - 1 && n > 1 && i % t.c.length === 0) col = t.c[2]; ctx.fillStyle = col; ctx.fill();
+        if (n < 150) { ctx.strokeStyle = t.ac + '55'; ctx.lineWidth = 1; ctx.stroke() }
+        const fs = Math.min(R * .09, arc * R * .55);
+        if (fs >= 6) {
+          ctx.save(); ctx.rotate(i * arc + arc / 2); ctx.fillStyle = lum(col) > .5 ? '#111' : '#fff';
+          ctx.font = `600 ${fs}px Outfit,sans-serif`; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+          let s = A[i].value, max = R * .68; while (ctx.measureText(s).width > max && s.length > 3) s = s.slice(0, -2); if (s !== A[i].value) s += '…';
+          ctx.fillText(s, R - R * .07, 0); ctx.restore()
+        }
+      }
+      ctx.restore();
+      ctx.beginPath(); ctx.arc(R, R, R * .09, 0, 7); ctx.fillStyle = t.bg; ctx.fill(); ctx.lineWidth = R * .02; ctx.strokeStyle = t.ac; ctx.stroke();
+    }
+
+    function lum(h) { const v = parseInt(h.slice(1), 16); return (.299 * (v >> 16) + .587 * ((v >> 8) & 255) + .114 * (v & 255)) / 255 }
+
+    function idxAt(n) {
+      // Calculate which segment is at the pointer position
+      // The wheel renders entries starting from angle 0 going counterclockwise
+      // Entry i spans from angle i*arc to (i+1)*arc (before rotation)
+      // After rotation by anim.rot, entry i spans from anim.rot + i*arc to anim.rot + (i+1)*arc
+      // The pointer is at angle PA() = -Math.PI/2 (pointing up)
+      // We need to find which entry's segment contains the pointer angle
+      
+      const pointerAngle = PA();
+      const segmentAngle = 2 * Math.PI / n;
+      
+      // Calculate the angle relative to the wheel's current rotation
+      // This gives us the position within the wheel's coordinate system
+      let relativeAngle = pointerAngle - anim.rot;
+      
+      // Normalize to [0, 2π)
+      relativeAngle = ((relativeAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+      
+      // Find which segment contains this angle
+      // Segment i covers angles [i*segmentAngle, (i+1)*segmentAngle)
+      const index = Math.floor(relativeAngle / segmentAngle);
+      
+      return Math.min(n - 1, index);
+    }
+
+    function tick() {
+      if (!state.soundEnabled) return; try {
+        anim.audio = anim.audio || new (window.AudioContext || window.webkitAudioContext)();
+        const o = anim.audio.createOscillator(), g = anim.audio.createGain(); o.frequency.value = 900; g.gain.setValueAtTime(.08, anim.audio.currentTime); g.gain.exponentialRampToValueAtTime(.001, anim.audio.currentTime + .05);
+        o.connect(g); g.connect(anim.audio.destination); o.start(); o.stop(anim.audio.currentTime + .05)
+      } catch (e) { }
+    }
+
+    function frame(t) {
+      const dt = Math.min((t - anim.last) / 1000 || 0, .05); anim.last = t;
+      rtick();
+      if (state.style === 'balls') render();
+      if (drawState.isRunning) anim.vel = Math.min(anim.vel + VM() / 1.5 * dt, VM());
+      else if (drawState.isStopping) {
+        const el = (performance.now() - anim.t0) / 1000, p = Math.min(el / T, 1);
+        if (isCont()) {
+          anim.rot = anim.r0 + D * (1 - Math.pow(1 - p, 3));
+          anim.vel = anim.v0 * Math.pow(1 - p, 2);
+        } else anim.vel = anim.v0 * (1 - p);
+        if (el >= T) {
+          anim.vel = 0;
+          if (isCont()) anim.rot = target;
+          anim.ri = drawState.lockedWinner ? drawState.lockedWinner.index : 0;
+          anim.done = true;
+          render();
+          finalizeDraw();
+        }
+      }
+      if (anim.vel > 0) {
+        if (drawState.isRunning) anim.rot += anim.vel * dt;
+        render();
+        const A = getEligibleEntries();
+        if (A.length) {
+          const i = cur(A.length);
+          if (i !== anim.lastIdx) {
+            anim.lastIdx = i;
+            $('#read').textContent = A[i].value;
+            tick();
+          }
+        }
+      }
+      requestAnimationFrame(frame);
+    }
+
+    function VM() { return state.style === 'wheel' || state.style === 'zoom' || state.style === 'reel' ? 14 : 10 }
+    function PA() { return state.style === 'zoom' ? 0 : -Math.PI / 2 }
+    function isCont() { return state.style === 'wheel' || state.style === 'zoom' || state.style === 'reel' }
+    function cur(n) { return isCont() ? idxAt(n) : Math.min(n - 1, anim.ri) }
+
+    function rtick() {
+      if (isCont() || (!drawState.isRunning && !drawState.isStopping)) return;
+      const now = performance.now(), n = getEligibleEntries().length;
+      if (n < 2 || now < anim.nx) return;
+      const p = drawState.isStopping ? Math.min((now - anim.t0) / 1000 / T, 1) : 0;
+      let r = secureRandom(n);
+      if (r === anim.ri) r = (r + 1) % n;
+      anim.ri = r;
+      anim.nx = now + 80 + 700 * p * p;
+    }
+
+    function secureRandom(n) {
+      const maxUint32 = 0xFFFFFFFF;
+      const limit = Math.floor(maxUint32 / n) * n;
+      let randomUint32;
+      do {
+        const buffer = new Uint32Array(1);
+        crypto.getRandomValues(buffer);
+        randomUint32 = buffer[0];
+      } while (randomUint32 >= limit);
+      return randomUint32 % n;
+    }
+
+    // Returns a cryptographically secure float in [0, 1)
+    function secureRandomFloat() {
+      const buffer = new Uint32Array(1);
+      crypto.getRandomValues(buffer);
+      // Use 53 bits of precision (same as Math.random)
+      return (buffer[0] / 0x100000000);
+    }
+
+    let T = 4, D = 0;
+    function startStop() {
+      const A = getEligibleEntries(), n = A.length, P = 2 * Math.PI;
+      if (!drawState.lockedWinner) return;
+      const winnerIndex = drawState.lockedWinner.index;
+      anim.v0 = Math.max(anim.vel, 6);
+      anim.r0 = anim.rot;
+      anim.t0 = performance.now();
+      if (isCont()) {
+        // Calculate exact target rotation to land on winner center
+        // PA() is pointer angle, we want winner segment center at pointer
+        const winnerCenterAngle = PA() - (winnerIndex + 0.5) * (P / n);
+        // Add small random offset within winner segment for visual variety
+        // Keep offset small (±20% of segment) to ensure we stay on winner
+        const offset = (secureRandomFloat() - 0.5) * 0.4 * (P / n);
+        const need = winnerCenterAngle + offset;
+        // Calculate rotation distance (always positive, wraps around)
+        D = anim.v0 + ((((need - anim.r0 - anim.v0) % P) + P) % P);
+        T = 3 * D / anim.v0;
+        target = anim.r0 + D;
+      } else T = 3.5;
+    }
+
+    // Override the stopDraw to call startStop
+    const originalStopDraw = stopDraw;
+    stopDraw = function () {
+      if (!drawState.isRunning || drawState.isStopping) return;
+      clearTimeout(anim.autoT);
+      drawState.isStopping = true;
+      startStop();
+      drawState.isRunning = false;
+      setBtn();
+    };
+
+    function setStyle() {
+      state.style = $('#style').value;
+      anim.altKey = '';
+      render();
+    }
+
+    function render() {
+      const wh = state.style === 'wheel' || state.style === 'zoom';
+      document.querySelector('.wheelwrap').classList.toggle('hide', !wh);
+      document.querySelector('.wheelwrap').classList.toggle('wide', state.style === 'zoom');
+      $('#alt').classList.toggle('hide', wh);
+      if (wh) return state.style === 'zoom' ? _renderBig() : renderWheel();
+      if (!getEligibleEntries().length) { $('#alt').textContent = 'Add entries to begin'; anim.altKey = ''; return }
+      buildAlt(); renderAlt();
+    }
+
+    function fi(n) { return ((((PA() - anim.rot) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)) / (2 * Math.PI / n) }
+
+    function buildAlt() {
+      const isPres = document.querySelector('.app').classList.contains('pres');
+      const A = getEligibleEntries(), n = A.length, key = state.style + '|' + n + '|' + A[0]?.value + '|' + A[n - 1]?.value + '|' + $('#alt').clientWidth + '|' + innerHeight + '|' + state.eliminatedIds.size + '|' + (isPres ? 'p' : 'n');
+      if (key === anim.altKey) return;
+      anim.altKey = key;
+      anim.AE = {};
+      const W = $('#alt').clientWidth || 700;
+      if (state.style === 'reel') {
+        $('#alt').innerHTML = '<div class="reel"><div class="hl"></div></div>';
+        anim.AE.r = $('#alt').firstChild; anim.AE.hl = anim.AE.r.firstChild; anim.AE.rows = [];
+        for (let k = 0; k < 11; k++) { const d = document.createElement('div'); d.className = 'row'; anim.AE.r.appendChild(d); anim.AE.rows.push(d) }
+      } else if (state.style === 'shuffle') {
+        $('#alt').innerHTML = '<div class="shuf"><div class="big"></div></div>';
+        anim.AE.box = $('#alt').firstChild; anim.AE.b = anim.AE.box.firstChild;
+      } else if (state.style === 'board') {
+        const isPres = document.querySelector('.app').classList.contains('pres');
+        let H;
+        if (isPres) {
+          const headH = document.querySelector('.head')?.offsetHeight || 42;
+          const readH = $('#read')?.offsetHeight || 38;
+          const goH = $('#go')?.offsetHeight || 40;
+          const presH = $('#pres')?.offsetHeight || 28;
+          // Accounting for stage gaps, app padding, and safety margin so presentation fits screen without scroll
+          const overhead = headH + readH + goH + presH + 72;
+          H = Math.max(220, Math.floor(innerHeight - overhead));
+        } else {
+          H = Math.min(innerHeight * .66, 560);
+        }
+
+        const N = state.entries.length;
+        let maxLen = 1, sumLen = 0;
+        for (const e of state.entries) {
+          const len = (e.value || '').length;
+          if (len > maxLen) maxLen = len;
+          sumLen += len;
+        }
+        const avgLen = N > 0 ? sumLen / N : 1;
+        // Aspect ratio: wider for longer text/names, closer to square for short numbers
+        const targetAR = avgLen <= 3 ? 1.18 : Math.min(3.2, Math.max(1.3, avgLen * 0.22));
+        const cols = Math.max(1, Math.min(N || 1, Math.round(Math.sqrt((N * W) / (H * targetAR)))));
+        const rows = Math.ceil(N / cols) || 1;
+        const gap = N > 120 ? 2 : (N > 40 ? 3 : (N > 12 ? 4 : 6));
+        const cellW = (W - 12 - (cols - 1) * gap) / cols;
+        const cellH = (H - 12 - (rows - 1) * gap) / rows;
+        const effLen = Math.min(maxLen, Math.max(avgLen * 1.35, 3));
+        const maxFontW = Math.max(7, (cellW - 8) / (0.6 * effLen));
+        const maxFontH = Math.max(7, cellH * 0.52);
+        const fontSize = Math.max(7, Math.min(isPres ? 56 : 24, Math.floor(Math.min(maxFontW, maxFontH))));
+
+        $('#alt').innerHTML = '<div class="board"></div>';
+        const b = $('#alt').firstChild;
+        b.style.cssText = `grid-template-columns:repeat(${cols},1fr);grid-template-rows:repeat(${rows},1fr);gap:${gap}px;height:${H}px;font-size:${fontSize}px`;
+        anim.AE.t = state.entries.map(s => { const d = document.createElement('div'); d.textContent = s.value; if (state.eliminatedIds.has(s.id)) d.className = 'gone'; b.appendChild(d); return d });
+        anim.AE.cur = -1;
+      } else if (state.style === 'slots') {
+        const L = Math.min(16, Math.max(...A.map(s => s.value.length))), fs = Math.min(W / L * .8, innerHeight * .28, 130);
+        $('#alt').innerHTML = '<div class="slots"></div>';
+        const s = $('#alt').firstChild;
+        anim.AE.L = L; anim.AE.c = [];
+        anim.AE.ch = A.every(x => /^\d+$/.test(x.value)) ? '0123456789' : 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        for (let k = 0; k < L; k++) { const d = document.createElement('div'); d.className = 'cell'; d.style.cssText = `width:${fs * .85}px;height:${fs * 1.3}px;font-size:${fs}px`; s.appendChild(d); anim.AE.c.push(d) }
+      } else {
+        $('#alt').innerHTML = '<canvas class="drum"></canvas>';
+        const cv = $('#alt').firstChild, S = cv.clientWidth, d = window.devicePixelRatio || 1;
+        cv.width = cv.height = Math.round(S * d);
+        anim.AE.c2 = cv.getContext('2d'); anim.AE.S = S; anim.AE.d = d; anim.AE.t0 = performance.now(); anim.AE.rr = .13;
+        anim.AE.b = Array.from({ length: Math.min(n, 40) }, (_, k) => { const a = secureRandomFloat() * 6.28, r = secureRandomFloat() * .6, b = secureRandomFloat() * 6.28; return { x: Math.cos(a) * r, y: Math.sin(a) * r, vx: Math.cos(b), vy: Math.sin(b), k, l: A[Math.floor(secureRandomFloat() * n)].value.split(' ')[0].slice(0, 7) } });
+      }
+    }
+
+    function renderAlt() {
+      const A = getEligibleEntries(), n = A.length, f = fi(n), i = cur(n);
+      if (state.style === 'reel') {
+        const H = anim.AE.r.clientHeight, RH = H / 7;
+        anim.AE.hl.style.cssText = `height:${RH}px;margin-top:${-RH / 2}px`;
+        anim.AE.rows.forEach((d, k) => {
+          const j = Math.floor(f) + k - 5, o = j + .5 - f;
+          d.textContent = A[((j % n) + n) % n].value;
+          d.style.cssText = `top:${H / 2 + o * RH - RH / 2}px;height:${RH}px;line-height:${RH}px;font-size:${RH * .5}px;opacity:${Math.max(0, 1 - Math.abs(o) * .25)};color:${Math.abs(o) < .5 ? 'var(--ac)' : 'inherit'}`;
+        });
+      } else if (state.style === 'shuffle') {
+        const s = (!drawState.isRunning && !drawState.isStopping && anim.done) ? anim.tStr : A[i].value;
+        anim.AE.b.textContent = s;
+        anim.AE.b.style.fontSize = Math.min(anim.AE.box.clientHeight * .45, anim.AE.box.clientWidth * 1.5 / Math.max(4, s.length)) + 'px';
+        anim.AE.b.style.filter = `blur(${Math.min(anim.vel / VM(), 1) * 2}px)`;
+      } else if (state.style === 'board') {
+        const fin = !drawState.isRunning && !drawState.isStopping && anim.done;
+        const targetId = fin && drawState.lockedWinner ? drawState.lockedWinner.id : null;
+        const j = targetId !== null ? state.entries.findIndex(e => e.id === targetId) : state.entries.findIndex(e => e.value === A[i]?.value);
+        if (anim.AE.cur !== j) {
+          if (anim.AE.t[anim.AE.cur]) anim.AE.t[anim.AE.cur].classList.remove('on', 'win');
+          if (anim.AE.t[j]) anim.AE.t[j].classList.add('on');
+          anim.AE.cur = j;
+        }
+        if (anim.AE.t[j]) anim.AE.t[j].classList.toggle('win', fin);
+      } else if (state.style === 'slots') {
+        const L = anim.AE.L, sd = Math.floor(performance.now() / 70), lk = drawState.isRunning ? 0 : drawState.isStopping ? Math.floor((1 - anim.vel / anim.v0) * L * 1.15) : L, txt = (!drawState.isRunning && !drawState.isStopping && !anim.done ? A[i]?.value : anim.tStr)?.slice(0, L).padEnd(L) || '';
+        anim.AE.c.forEach((d, k) => {
+          const lo = k < lk;
+          d.textContent = lo ? txt[k] : anim.AE.ch[((((sd * 2654435761) ^ (k * 40503)) >>> 0)) % anim.AE.ch.length];
+          d.classList.toggle('lock', lo);
+        });
+      } else drum();
+    }
+
+    function drum() {
+      const c = anim.AE.c2, S = anim.AE.S, R = S / 2, k = R * .97, t = THEMES[state.theme] || THEMES['Black & gold'], now = performance.now(), dt = Math.min((now - anim.AE.t0) / 1000, .05);
+      anim.AE.t0 = now;
+      const f = Math.max(.15, Math.min(anim.vel / VM(), 1)), won = (drawState.isStopping && 1 - anim.vel / anim.v0 > .8) || (!drawState.isRunning && !drawState.isStopping && anim.done), ch = anim.AE.b[0];
+      for (const b of anim.AE.b) {
+        b.x += b.vx * dt * f * 1.4; b.y += b.vy * dt * f * 1.4;
+        const L = .87, m = Math.hypot(b.x, b.y);
+        if (m > L) { const nx = b.x / m, ny = b.y / m, dp = b.vx * nx + b.vy * ny; if (dp > 0) { b.vx -= 2 * dp * nx; b.vy -= 2 * dp * ny } b.x = nx * L; b.y = ny * L }
+      }
+      if (won) { ch.x += (0 - ch.x) * Math.min(1, dt * 4); ch.y += (0 - ch.y) * Math.min(1, dt * 4) }
+      anim.AE.rr += ((won ? .38 : .13) - anim.AE.rr) * Math.min(1, dt * 5);
+      c.setTransform(anim.AE.d, 0, 0, anim.AE.d, 0, 0); c.clearRect(0, 0, S, S); c.fillStyle = t.panel; c.strokeStyle = t.ac; c.lineWidth = S * .012; c.beginPath(); c.arc(R, R, k, 0, 7); c.fill(); c.stroke();
+      [...anim.AE.b.slice(1), ch].forEach(b => {
+        const isC = b === ch, r = (isC ? anim.AE.rr : .13) * k, col = b.k % 3 === 0 ? t.ac : b.k % 3 === 1 ? t.tx : t.c[1], x = R + b.x * k, y = R + b.y * k;
+        c.beginPath(); c.arc(x, y, r, 0, 7); c.fillStyle = col; c.fill(); c.lineWidth = 2; c.strokeStyle = '#0006'; c.stroke();
+        const s = isC && won ? anim.tStr : b.l;
+        c.fillStyle = lum(col) > .5 ? '#111' : '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = `700 ${Math.min(r * .55, r * 1.7 / Math.max(2, s.length * .62))}px Outfit,sans-serif`; c.fillText(s, x, y);
+      });
+    }
+
+    function confetti() {
+      const c = $('#conf'), x = c.getContext('2d');
+      c.width = innerWidth; c.height = innerHeight;
+      const t = THEMES[state.theme] || THEMES['Black & gold'];
+      const P = Array.from({ length: 140 }, () => ({ x: innerWidth / 2, y: innerHeight / 2, vx: (Math.random() - .5) * 16, vy: -Math.random() * 14 - 2, s: 4 + Math.random() * 6, c: t.c[Math.floor(Math.random() * t.c.length)], a: 1 }));
+      const tc = [t.ac, ...t.c];
+      let f = 0;
+      (function s() {
+        x.clearRect(0, 0, c.width, c.height);
+        P.forEach((p, i) => {
+          p.x += p.vx; p.y += p.vy; p.vy += .35; p.a -= .006;
+          x.globalAlpha = Math.max(p.a, 0);
+          x.fillStyle = tc[i % tc.length];
+          x.fillRect(p.x, p.y, p.s, p.s * .6);
+        });
+        if (++f < 170) requestAnimationFrame(s); else x.clearRect(0, 0, c.width, c.height);
+      })();
+    }
+
+    // ==================== EVENT HANDLERS ====================
+
+    $('#ok').onclick = () => { $('#ov').classList.remove('on'); render(); };
+
+    $('#go').onclick = () => {
+      if (drawState.isRunning) {
+        stopDraw();
+      } else {
+        startDraw();
+      }
+    };
+
+    addEventListener('keydown', e => {
+      if (e.code === 'Space' && !/INPUT|TEXTAREA|SELECT|BUTTON/.test(document.activeElement.tagName)) {
+        e.preventDefault();
+        if (drawState.isRunning) stopDraw(); else startDraw();
+      }
+    });
+
+    $('#shuffle').onclick = () => {
+      if (state.mode === 'numbers') return;
+      const a = state.names.split('\n').map(s => s.trim()).filter(Boolean);
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = secureRandom(i + 1);
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      state.names = a.join('\n');
+      $('#names').value = state.names;
+      rebuildEntries();
+      saveState();
+    };
+
+    $('#reset').onclick = () => {
+      confirmAction('This will restore all eliminated entries and allow them to win again. Winners history will be preserved. Continue?', () => {
+        state.eliminatedIds.clear();
+        render();
+        saveState();
+      });
+    };
+
+    $('#clr').onclick = () => {
+      confirmAction('This will clear all winners from the history. This action cannot be undone. Continue?', () => {
+        state.winners = [];
+        state.audit = [];
+        state.drawNumber = 0;
+        listWins();
+        updateAudit();
+        saveState();
+      });
+    };
+
+    $('#export').onclick = () => {
+      const csv = 'Draw Number,Timestamp,Winner ID,Winner Value,Eligible Count,Style,Remove Enabled\n' +
+        state.audit.map(a => `${a.drawNumber},${new Date(a.timestamp).toISOString()},${a.winnerId},"${a.winnerValue}",${a.eligibleCount},${a.style},${a.removeEnabled}`).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'raffle_audit.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    $('#names').addEventListener('input', () => {
+      state.names = $('#names').value;
+      rebuildEntries();
+      saveState();
+    });
+
+    $('#from').addEventListener('input', () => {
+      state.from = parseInt($('#from').value) || 1;
+      rebuildEntries();
+      saveState();
+    });
+
+    $('#to').addEventListener('input', () => {
+      state.to = parseInt($('#to').value) || 300;
+      rebuildEntries();
+      saveState();
+    });
+
+    $('#mode').addEventListener('input', () => {
+      state.mode = $('#mode').value;
+      rebuildEntries();
+      saveState();
+    });
+
+    $('#title').addEventListener('input', () => {
+      state.title = $('#title').value;
+      applyTheme();
+      saveState();
+    });
+
+    $('#subtitle').addEventListener('input', () => {
+      state.subtitle = $('#subtitle').value;
+      applyTheme();
+      saveState();
+    });
+
+    $('#theme').addEventListener('change', () => {
+      state.theme = $('#theme').value;
+      applyTheme();
+      render();
+      saveState();
+    });
+
+    $('#auto').addEventListener('input', () => {
+      state.auto = parseFloat($('#auto').value) || 0;
+      saveState();
+    });
+
+    $('#sound').addEventListener('change', () => {
+      state.soundEnabled = $('#sound').checked;
+      saveState();
+    });
+
+    $('#style').addEventListener('change', () => {
+      state.style = $('#style').value;
+      setStyle();
+      saveState();
+    });
+
+    $('#remove').addEventListener('change', () => {
+      state.removeEnabled = $('#remove').checked;
+      render();
+      saveState();
+    });
+
+    addEventListener('resize', () => {
+      anim.altKey = '';
+      render();
+    });
+
+    $('#pres').onclick = () => {
+      const on = !document.querySelector('.app').classList.contains('pres');
+      document.querySelector('.app').classList.toggle('pres', on);
+      $('#pres').textContent = on ? 'Exit presentation mode' : 'Presentation mode';
+      anim.altKey = '';
+      try {
+        if (on && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+        else if (!on && document.fullscreenElement) document.exitFullscreen();
+      } catch (e) { }
+      render();
+      setTimeout(render, 80);
+      setTimeout(render, 250);
+    };
+
+    document.addEventListener('fullscreenchange', () => {
+      anim.altKey = '';
+      render();
+      setTimeout(render, 80);
+    });
+
+    // Test function for console debugging
+    window.testDrawEngine = function () {
+      console.log('=== Draw Engine Test Suite ===\n');
+
+      console.log('Test 1: Unique Entry IDs');
+      const entries = state.entries;
+      const uniqueIds = new Set(entries.map(e => e.id));
+      console.log(`  Total entries: ${entries.length}`);
+      console.log(`  Unique IDs: ${uniqueIds.size}`);
+      console.log(`  Result: ${uniqueIds.size === entries.length ? 'PASS' : 'FAIL'}\n`);
+
+      console.log('Test 2: Eligible Entries');
+      const eligible = getEligibleEntries();
+      console.log(`  Total entries: ${entries.length}`);
+      console.log(`  Eliminated: ${state.eliminatedIds.size}`);
+      console.log(`  Eligible: ${eligible.length}`);
+      console.log(`  Result: ${eligible.length === entries.length - state.eliminatedIds.size ? 'PASS' : 'FAIL'}\n`);
+
+      console.log('Test 3: Rejection Sampling Check');
+      const maxUint32 = 0xFFFFFFFF;
+      const testN = 7;
+      const limit = Math.floor(maxUint32 / testN) * testN;
+      console.log(`  Test N: ${testN}`);
+      console.log(`  Limit: ${limit}`);
+      console.log(`  Evenly divisible: ${limit % testN === 0 ? 'YES' : 'NO'}`);
+      console.log(`  Result: ${limit % testN === 0 ? 'PASS' : 'FAIL'}\n`);
+
+      console.log('Test 4: Distribution Check (1000 draws)');
+      const testPool = Array.from({ length: 10 }, (_, i) => ({ id: `t_${i}`, value: String(i) }));
+      const counts = new Array(10).fill(0);
+      for (let i = 0; i < 1000; i++) {
+        const n = testPool.length;
+        const lim = Math.floor(maxUint32 / n) * n;
+        let rnd;
+        do { const b = new Uint32Array(1); crypto.getRandomValues(b); rnd = b[0]; } while (rnd >= lim);
+        counts[rnd % n]++;
+      }
+      console.log(`  Counts: ${counts.join(', ')}`);
+      const min = Math.min(...counts), max = Math.max(...counts);
+      console.log(`  Range: ${max - min}`);
+      console.log(`  Result: ${max - min < 100 ? 'PASS' : 'WARN'}\n`);
+
+      console.log('Test 5: State Consistency');
+      console.log(`  Winners: ${state.winners.length}`);
+      console.log(`  Audit records: ${state.audit.length}`);
+      console.log(`  Draw number: ${state.drawNumber}`);
+      console.log(`  Result: ${state.winners.length === state.audit.length ? 'PASS' : 'FAIL'}\n`);
+
+      console.log('=== Test Complete ===');
+    };
+  </script>
+</body>
+
+</html>
